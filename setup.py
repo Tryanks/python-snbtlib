@@ -6,14 +6,14 @@ with open("README.rst", "r", encoding="utf-8") as fh:
 
 setup(
     name='snbtlib',
-    version='0.0.2',
+    version='0.0.3',
     keywords='minecraft',
     description='a formatter for snbt from minecraft',
     long_description=long_description,
     license='MIT License',
     url='',
-    author='Tryank',
-    author_email='maztryank@gmail.com',
+    author='Tryanks',
+    author_email='tryanks@outlook.com',
     packages=find_packages(),
     include_package_data=True,
     platforms='any',
