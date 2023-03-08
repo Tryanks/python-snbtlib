@@ -6,7 +6,7 @@ class SnbtReader:
     text = ''
     index = 0
 
-    def __init__(self, t:str):
+    def __init__(self, t: str):
         self.text = t
 
     def next(self):
@@ -18,7 +18,7 @@ class SnbtReader:
         return self.text[self.index - 1]
 
     def snext(self):
-        self.index +=1
+        self.index += 1
         if self.index - 1 >= len(self.text):
             return False
         return self.text[self.index - 1]
@@ -42,6 +42,7 @@ class Token:
     NUMBER = 7
     KEY = 8
     BOOL = 9
+    INTEGER = 10
 
 
 class TokenElement:
@@ -50,7 +51,7 @@ class TokenElement:
 
 
 class TokenIterator:
-    TokenList : list = []
+    TokenList: list = []
     index = 0
 
     def __init__(self, l):
@@ -64,9 +65,9 @@ class TokenIterator:
         return token
 
 
-def loads(file, format = False):
+def loads(file, format=False):
     snbt_token = snbt_to_token_list(file)
-    snbt_dict  = None
+    snbt_dict = None
     iterator = TokenIterator(snbt_token)
     while i := iterator.next():
         if i.type == Token.BEGIN_DICT:
@@ -80,7 +81,7 @@ def loads(file, format = False):
     return snbt_dict
 
 
-def dumps(json, indent = 0):
+def dumps(json, indent=0):
     if type(json) == str:
         json = j_loads(json)
     text = ''
@@ -101,16 +102,19 @@ def dumps(json, indent = 0):
         elif len(json) == 1 and type(json[0]) not in (dict, list):  # TODO: 解决字典和列表嵌套的缩进问题
             text += f'[{type_return(json[0])[:-1]}]\n'
         else:
-            text += '[\n'
+            if json[0] == 'I;':
+                text += '[I;\n'
+            else:
+                text += '[\n'
             indent += 1
-            for value in json:
+            for value in json[1:]:
                 text += indent * '\t' + type_return(value, indent)
             text += (indent - 1) * '\t' + ']\n'
 
     return text
 
 
-def type_return(value, indent = 0):
+def type_return(value, indent=0):
     text = ''
     if type(value) in (dict, list):
         text += dumps(value, indent)
@@ -149,7 +153,7 @@ def list_iterator(token):
             tlist.append(dict_iterator(token))
         elif i.type == Token.BEGIN_LIST:
             tlist.append(list_iterator(token))
-        elif i.type in (Token.BOOL, Token.STRING, Token.NUMBER):
+        elif i.type in (Token.BOOL, Token.STRING, Token.NUMBER, Token.INTEGER):
             tlist.append(i.value)
         elif i.type == Token.END_LIST:
             break
@@ -159,7 +163,7 @@ def list_iterator(token):
 def snbt_to_token_list(t):
     token_list = []
     reader = SnbtReader(t)
-    while i:= reader.next():
+    while i := reader.next():
         token = TokenElement()
         if i == '{':
             token.type = Token.BEGIN_DICT
@@ -223,6 +227,9 @@ def KeyBuilder(token, r):
         if s in ('true', 'false'):
             token.type = Token.BOOL
             s = True if s == 'true' else False
+            break
+        elif s == 'I;':
+            token.type = Token.INTEGER
             break
     token.value = s
     return token
