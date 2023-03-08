@@ -104,10 +104,11 @@ def dumps(json, indent=0):
         else:
             if json[0] == 'I;':
                 text += '[I;\n'
+                json = json[1:]
             else:
                 text += '[\n'
             indent += 1
-            for value in json[1:]:
+            for value in json:
                 text += indent * '\t' + type_return(value, indent)
             text += (indent - 1) * '\t' + ']\n'
 
