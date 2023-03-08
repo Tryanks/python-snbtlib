@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 
-with open("README.rst", "r", encoding="utf-8") as fh:
+with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
     name='snbtlib',
-    version='0.0.3',
+    version='0.0.4',
     keywords='minecraft',
     description='a formatter for snbt from minecraft',
     long_description=long_description,
