@@ -85,15 +85,20 @@ def dumps(json, indent = 0):
         json = j_loads(json)
     text = ''
     if type(json) == dict:
-        text += '{\n'
-        indent += 1
-        for key, value in json.items():
-            text += indent * '\t'
-            text += key + ': '
-            text += type_return(value, indent)
-        text += (indent - 1) * '\t' + '}\n'
+        if not json:
+            text += '{ }\n'
+        else:
+            text += '{\n'
+            indent += 1
+            for key, value in json.items():
+                text += indent * '\t'
+                text += key + ': '
+                text += type_return(value, indent)
+            text += (indent - 1) * '\t' + '}\n'
     elif type(json) == list:
-        if len(json) == 1 and type(json[0]) not in (dict, list):
+        if not json:
+            text += '[ ]\n'
+        elif len(json) == 1 and type(json[0]) not in (dict, list):  # TODO: 解决字典和列表嵌套的缩进问题
             text += f'[{type_return(json[0])[:-1]}]\n'
         else:
             text += '[\n'
@@ -115,7 +120,8 @@ def type_return(value, indent = 0):
         else:
             text += f'"{value}"\n'
     elif type(value) == bool:
-        text += 'true' if value else 'false' + '\n'
+        text += 'true' if value else 'false'
+        text += '\n'
     return text
 
 
