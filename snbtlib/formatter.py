@@ -172,9 +172,6 @@ def snbt_to_token_list(t):
         elif i == '[':
             token.type = Token.BEGIN_LIST
             token.value = '['
-        elif i == '"':
-            token.type = Token.STRING
-            token.value = StringBuilder(reader)
         elif i in '-0123456789':
             token.type = Token.NUMBER
             token.value = NumberBuilder(reader)
@@ -193,6 +190,17 @@ def snbt_to_token_list(t):
     return token_list
 
 
+def NumberBuilder(r):
+    s = StringIO()
+    s.write(r.get_point())
+    while i := r.next():
+        if i in ',\n' or i.isspace():
+            r.last()
+            break
+        s.write(i)
+    return '$number$' + s.getvalue()
+
+
 def StringBuilder(r):
     s = StringIO()
     while i := r.snext():
@@ -206,23 +214,29 @@ def StringBuilder(r):
     return s.getvalue()
 
 
-def NumberBuilder(r):
-    s = StringIO()
-    s.write(r.get_point())
-    while i := r.next():
-        if i in ',\n' or i.isspace():
-            r.last()
-            break
-        s.write(i)
-    return '$number$' + s.getvalue()
-
-
 def KeyBuilder(token, r):
     s = ''
-    s += r.get_point()
+    stringStatus = False
+    if r.get_point() == '"':
+        stringStatus = True
+    else:
+        s += r.get_point()
     token.type = Token.KEY
-    while i := r.next():
-        if i == ':':
+    while i := r.snext():
+        if stringStatus:
+            if i == '\\':
+                s += '\\'
+                s += r.snext()
+                continue
+            elif i == '"':
+                if r.snext() == ':':
+                    s = f'"{s}"'
+                    break
+                else:
+                    r.last()
+                    token.type = Token.STRING
+                    break
+        if i == ':' and not stringStatus:
             break
         s += i
         if s in ('true', 'false'):
