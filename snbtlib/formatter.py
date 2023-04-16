@@ -194,7 +194,7 @@ def NumberBuilder(r):
     s = StringIO()
     s.write(r.get_point())
     while i := r.next():
-        if i in ',\n' or i.isspace():
+        if i in '},\n' or i.isspace():
             r.last()
             break
         s.write(i)
@@ -233,9 +233,15 @@ def KeyBuilder(token, r):
                     s = f'"{s}"'
                     break
                 else:
-                    r.last()
-                    token.type = Token.STRING
-                    break
+                    if not r.get_point().isspace() and not r.get_point() in ',]}':
+                        r.last()
+                        s += '\\'
+                        s += r.get_point()
+                        continue
+                    else:
+                        r.last()
+                        token.type = Token.STRING
+                        break
         if i == ':' and not stringStatus:
             break
         s += i
