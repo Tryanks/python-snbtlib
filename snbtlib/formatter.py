@@ -173,8 +173,13 @@ def snbt_to_token_list(t):
             token.type = Token.BEGIN_LIST
             token.value = '['
         elif i in '-0123456789':
-            token.type = Token.NUMBER
-            token.value = NumberBuilder(reader)
+            if reader.snext() == ':':
+                reader.last()
+                token = KeyBuilder(token, reader)
+            else:
+                reader.last()
+                token.type = Token.NUMBER
+                token.value = NumberBuilder(reader)
         elif i == ']':
             token.type = Token.END_LIST
             token.value = ']'
@@ -194,7 +199,7 @@ def NumberBuilder(r):
     s = StringIO()
     s.write(r.get_point())
     while i := r.next():
-        if i in '},\n' or i.isspace():
+        if i in '},\n:' or i.isspace():
             r.last()
             break
         s.write(i)
@@ -217,8 +222,12 @@ def StringBuilder(r):
 def KeyBuilder(token, r):
     s = ''
     stringStatus = False
+    numberStatus = False
     if r.get_point() == '"':
         stringStatus = True
+    elif r.get_point() in '0123456789':
+        r.last()
+        numberStatus = True
     else:
         s += r.get_point()
     token.type = Token.KEY
@@ -242,6 +251,11 @@ def KeyBuilder(token, r):
                         r.last()
                         token.type = Token.STRING
                         break
+        if numberStatus:
+            if i in '0123456789':
+                s += i
+            if r.snext() == ':':
+                break
         if i == ':' and not stringStatus:
             break
         s += i
