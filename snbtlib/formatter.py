@@ -154,6 +154,8 @@ def dict_iterator(token):
         elif i.type == Token.END_DICT:
             break
         key = i.value
+        if key.startswith('$number$'):
+            key = key[8:]
         if i.type == Token.STRING_IN_QUOTE:
             key = f'"{key}"'
     return tdict
