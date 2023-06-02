@@ -90,7 +90,7 @@ def loads(file, format=False):
     return snbt_dict
 
 
-def dumps(json, indent=0):
+def dumps(json, indent=0, compact=False):
     if type(json) == str:
         json = j_loads(json)
     text = ''
@@ -121,7 +121,7 @@ def dumps(json, indent=0):
                 text += indent * '\t' + type_return(value, indent)
             text += (indent - 1) * '\t' + ']\n'
 
-    return text
+    return text if not compact else Compatible(text)
 
 
 def type_return(value, indent=0):
@@ -239,3 +239,14 @@ def StringBuilder(r):
                 break
             s.write(i)
     return s.getvalue(), type
+
+
+def Compatible(text):  # Thanks for XDawned
+    if not text:
+        return ''
+    else:
+        lines = text.splitlines()
+        for i in range(len(lines)-1):
+            if lines[i][-1] not in '[{' and lines[i+1].strip()[0] not in ']}':
+                lines[i] += ','
+        return '\n'.join(lines)
