@@ -2,8 +2,8 @@ from io import StringIO
 from json import dumps as j_dumps, loads as j_loads
 from re import compile, sub
 
-annotation = compile(r'^//.*$')
-annotation2 = compile(r'^#.*$')
+annotation = compile(r'^\s+?//.*$')
+annotation2 = compile(r'^\s+?#.*$')
 
 
 class SnbtReader:
