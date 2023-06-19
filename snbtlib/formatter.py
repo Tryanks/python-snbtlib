@@ -136,6 +136,11 @@ def type_return(value, indent=0):
     elif type(value) == bool:
         text += 'true' if value else 'false'
         text += '\n'
+    elif type(value) == bytes:
+        text += "[B;\n"
+        for i in value:
+            text += '\t' * (indent + 1) + str(int.from_bytes(i, 'big')) + 'b\n'
+        text += '\t' * indent + ']\n'
     return text
 
 
@@ -163,6 +168,16 @@ def dict_iterator(token):
 
 def list_iterator(token):
     tlist = []
+    if token.next() == "B;":
+        tlist = b''
+        while i := token.next():
+            if i.type == Token.END_LIST:
+                break
+            value = i.value[:-1]
+            tlist += int(value).to_bytes(1, 'big')
+        return tlist
+    else:
+        token.last()
     while i := token.next():
         if i.type == Token.BEGIN_DICT:
             tlist.append(dict_iterator(token))
