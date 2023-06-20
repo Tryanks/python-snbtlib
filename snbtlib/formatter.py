@@ -73,6 +73,10 @@ class TokenIterator:
         self.index += 1
         return token
 
+    def last(self):
+        self.index -= 1
+        return self.TokenList[self.index - 1]
+
 
 def loads(file, format=False):
     snbt_token = snbt_to_token_list(file)
