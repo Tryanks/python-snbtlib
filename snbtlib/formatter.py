@@ -230,7 +230,7 @@ def NumberBuilder(r):
     s = StringIO()
     s.write(r.get_point())
     while i := r.next():
-        if i in '},\n:' or i.isspace():
+        if i in '}],\n:' or i.isspace():
             r.last()
             break
         s.write(i)
