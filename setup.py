@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='snbtlib',
-    version='1.0.0',
+    version='1.0.2',
     keywords='minecraft',
     description='a formatter for snbt from minecraft',
     long_description=long_description,

@@ -257,6 +257,8 @@ def StringBuilder(r):
                 r.last()
                 break
             s.write(i)
+    if type == Token.STRING and s.getvalue() in ('true', 'false'):
+        return s.getvalue() == 'true', Token.BOOL
     return s.getvalue(), type
 
 
