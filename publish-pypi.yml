@@ -1,0 +1,78 @@
+# MOVE ME: .github/workflows/publish.yml
+# ----------------------------------------------------------------------
+# Maintainer instructions (manual step required):
+# 1) Move this file to: .github/workflows/publish.yml
+# 2) In your GitHub repository settings, add a repository secret named
+#    PYPI_API_TOKEN that contains an API token generated from https://pypi.org
+#    with scope to upload the 'snbtlib' project.
+# 3) (Optional) Restrict who can trigger workflows on the main branch as desired.
+#
+# What this workflow does:
+# - Builds an sdist and wheel for this package when commits are pushed/merged to main.
+# - Publishes the built artifacts to PyPI using the PYPI_API_TOKEN secret.
+# - Includes guardrails to only run on the canonical repo and avoid duplicate runs.
+#
+# You can also trigger it manually via the "Run workflow" button (workflow_dispatch).
+# ----------------------------------------------------------------------
+
+name: Publish to PyPI
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "snbtlib/**"
+      - "setup.py"
+      - "pyproject.toml"
+      - "setup.cfg"
+      - "MANIFEST.in"
+      - "README*"
+      - "LICENSE*"
+  workflow_dispatch: {}
+
+# Avoid parallel publishes for the same ref
+concurrency:
+  group: pypi-publish-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    # Only run on the canonical repository to prevent forks from publishing.
+    if: github.repository == 'Tryanks/python-snbtlib'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Upgrade pip and install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+
+      - name: Build sdist and wheel
+        run: |
+          python -m build --sdist --wheel --outdir dist/
+
+      # Optional: show the artifacts that will be uploaded
+      - name: List built files
+        run: ls -lh dist/
+
+      - name: Publish to PyPI
+        if: ${{ success() }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          # Skip files if the version already exists on PyPI (prevents failures on re-runs)
+          skip-existing: true
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Workflow completed. If nothing was uploaded, ensure PYPI_API_TOKEN is set and that the version in setup.py is new." >> $GITHUB_STEP_SUMMARY
