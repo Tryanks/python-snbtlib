@@ -18,4 +18,5 @@ setup(
     include_package_data=True,
     platforms='any',
     long_description_content_type="text/markdown",
+    python_requires=">=3.8",
 )

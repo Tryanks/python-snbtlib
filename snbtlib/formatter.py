@@ -1,23 +1,26 @@
+from __future__ import annotations
+
 from io import StringIO
 from json import dumps as j_dumps, loads as j_loads
 from re import compile, sub
+from typing import Any, Dict, List, Tuple, Union
 
 annotation = compile(r'^\s+?//.*$')
 annotation2 = compile(r'^\s+?#.*$')
 
 
 class SnbtReader:
-    text = ''
-    index = 0
+    text: str = ''
+    index: int = 0
 
-    def __init__(self, t: str):
+    def __init__(self, t: str) -> None:
         # Annotation filter
         t = t.replace('\r', '')
         t = sub(annotation, '', t)
         t = sub(annotation2, '', t)
         self.text = t
 
-    def next(self):
+    def next(self) -> Union[str, bool]:
         self.index += 1
         if self.index - 1 >= len(self.text):
             return False
@@ -25,76 +28,76 @@ class SnbtReader:
             return self.next()
         return self.text[self.index - 1]
 
-    def snext(self):
+    def snext(self) -> Union[str, bool]:
         self.index += 1
         if self.index - 1 >= len(self.text):
             return False
         return self.text[self.index - 1]
 
-    def get_point(self):
+    def get_point(self) -> str:
         return self.text[self.index - 1]
 
-    def last(self):
+    def last(self) -> str:
         self.index -= 1
         return self.text[self.index - 1]
 
 
 class Token:
-    EMPTY = -1
-    BEGIN_DICT = 0
-    COLON = 2
-    END_DICT = 4
-    BEGIN_LIST = 5
-    END_LIST = 6
-    ENTER = 7
-    STRING = 8
-    STRING_IN_QUOTE = 999
-    NUMBER = 9
-    BOOL = 10
-    INTEGER = 11
+    EMPTY: int = -1
+    BEGIN_DICT: int = 0
+    COLON: int = 2
+    END_DICT: int = 4
+    BEGIN_LIST: int = 5
+    END_LIST: int = 6
+    ENTER: int = 7
+    STRING: int = 8
+    STRING_IN_QUOTE: int = 999
+    NUMBER: int = 9
+    BOOL: int = 10
+    INTEGER: int = 11
 
 
 class TokenElement:
-    type = Token.EMPTY
-    value = ''
+    type: int = Token.EMPTY
+    value: Union[str, bool] = ''
 
 
 class TokenIterator:
-    TokenList: list = []
-    index = 0
+    TokenList: List[TokenElement] = []
+    index: int = 0
 
-    def __init__(self, l):
+    def __init__(self, l: List[TokenElement]) -> None:
         self.TokenList = l
 
-    def next(self):
+    def next(self) -> Union[TokenElement, bool]:
         if self.index >= len(self.TokenList):
             return False
         token = self.TokenList[self.index]
         self.index += 1
         return token
 
-    def last(self):
+    def last(self) -> TokenElement:
         self.index -= 1
         return self.TokenList[self.index - 1]
 
 
-def loads(file, format=False):
+def loads(file: str, format: bool = False) -> Union[Dict[str, Any], List[Any], str, None]:
     snbt_token = snbt_to_token_list(file)
-    snbt_dict = None
+    snbt_dict: Union[Dict[str, Any], List[Any], None] = None
     iterator = TokenIterator(snbt_token)
     while i := iterator.next():
         if i.type == Token.BEGIN_DICT:
             snbt_dict = dict_iterator(iterator)
             break
         elif i.type == Token.BEGIN_LIST:
-            snbt_dict = list_iterator(iterator)
+            snbt_dict = list_iterator(iterator)  # type: ignore[assignment]
             break
     if format:
         return j_dumps(snbt_dict, ensure_ascii=False, indent=4)
     return snbt_dict
 
 
-def dumps(json, indent=0, compact=False):
+def dumps(json: Union[str, Dict[str, Any], List[Any]], indent: int = 0, compact: bool = False) -> str:
     if type(json) == str:
         json = j_loads(json)
     text = ''
@@ -128,7 +131,7 @@ def dumps(json, indent=0, compact=False):
     return text if not compact else Compatible(text)
 
 
-def type_return(value, indent=0):
+def type_return(value: Any, indent: int = 0) -> str:
     text = ''
     if type(value) in (dict, list):
         text += dumps(value, indent)
@@ -148,9 +151,9 @@ def type_return(value, indent=0):
     return text
 
 
-def dict_iterator(token):
-    tdict = {}
-    key = ''
+def dict_iterator(token: TokenIterator) -> Dict[str, Any]:
+    tdict: Dict[str, Any] = {}
+    key: str = ''
     while i := token.next():
         if i.type == Token.COLON:
             next_i = token.next()
@@ -162,24 +165,24 @@ def dict_iterator(token):
                 tdict[key] = next_i.value
         elif i.type == Token.END_DICT:
             break
-        key = i.value
-        if key.startswith('$number$'):
+        key = i.value  # type: ignore[assignment]
+        if isinstance(key, str) and key.startswith('$number$'):
             key = key[8:]
-        if i.type == Token.STRING_IN_QUOTE:
+        if i.type == Token.STRING_IN_QUOTE and isinstance(key, str):
             key = f'"{key}"'
     return tdict
 
 
-def list_iterator(token):
-    tlist = []
+def list_iterator(token: TokenIterator) -> Union[List[Any], bytes]:
+    tlist: List[Any] = []
     if token.next() == "B;":
-        tlist = b''
+        tlist_bytes: bytes = b''
         while i := token.next():
             if i.type == Token.END_LIST:
                 break
-            value = i.value[:-1]
-            tlist += int(value).to_bytes(1, 'big')
-        return tlist
+            value = i.value[:-1]  # type: ignore[index]
+            tlist_bytes += int(value).to_bytes(1, 'big')
+        return tlist_bytes
     else:
         token.last()
     while i := token.next():
@@ -194,8 +197,8 @@ def list_iterator(token):
     return tlist
 
 
-def snbt_to_token_list(t):
-    token_list = []
+def snbt_to_token_list(t: str) -> List[TokenElement]:
+    token_list: List[TokenElement] = []
     reader = SnbtReader(t)
     while i := reader.next():
         token = TokenElement()
@@ -226,22 +229,22 @@ def snbt_to_token_list(t):
     return token_list
 
 
-def NumberBuilder(r):
+def NumberBuilder(r: SnbtReader) -> str:
     s = StringIO()
     s.write(r.get_point())
     while i := r.next():
         if i in '}],\n:' or i.isspace():
             r.last()
             break
-        s.write(i)
+        s.write(i)  # type: ignore[arg-type]
     return '$number$' + s.getvalue()
 
 
-def StringBuilder(r):
+def StringBuilder(r: SnbtReader) -> Tuple[Union[str, bool], int]:
     s = StringIO()
-    type = Token.STRING
+    type_val = Token.STRING
     if r.get_point() == '"':
-        type = Token.STRING_IN_QUOTE
+        type_val = Token.STRING_IN_QUOTE
         while i := r.snext():
             if i == '\\':
                 s.write('\\')
@@ -249,20 +252,20 @@ def StringBuilder(r):
                 continue
             elif i == '"':
                 break
-            s.write(i)
+            s.write(i)  # type: ignore[arg-type]
     else:
         r.last()
         while i := r.next():
             if i in '},\n:[]' or i.isspace():
                 r.last()
                 break
-            s.write(i)
-    if type == Token.STRING and s.getvalue() in ('true', 'false'):
+            s.write(i)  # type: ignore[arg-type]
+    if type_val == Token.STRING and s.getvalue() in ('true', 'false'):
         return s.getvalue() == 'true', Token.BOOL
-    return s.getvalue(), type
+    return s.getvalue(), type_val
 
 
-def Compatible(text):  # Thanks for XDawned
+def Compatible(text: str) -> str:  # Thanks for XDawned
     if not text:
         return ''
     else:
